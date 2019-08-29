@@ -1,6 +1,6 @@
 # Chomsky-Hierarchy
 Usage: 
-After downloading the project, int the root directory run.
+After downloading the project, in the root directory run.
 ```shell
 mvn package
 ```
