@@ -7,11 +7,6 @@ import java.util.StringTokenizer;
 import com.tks.util.IOUtil;
 import com.tks.util.StringProcess;
 
-// Test input:
-// Ab -> $/abc
-// B -> a/A
-// a -> $
-
 public class App {
 
     private static final boolean DEBUG = false;
@@ -63,7 +58,7 @@ public class App {
             }
         }
 
-        int commonType = -1;
+        int commonType = 5;
         for (String prod : productions) {
             StringTokenizer st = new StringTokenizer(prod);
             st.nextToken();
@@ -73,16 +68,28 @@ public class App {
             if (type.equals("invalid")) t = -1;
             else if (type.charAt(0) == 't') t = 3;
             else t = Integer.parseInt(type);
-            if (t >= commonType) commonType = t;
+            if (t <= commonType) commonType = t;
         }
         if (DEBUG) {
-            System.out.println("Common Type: "+commonType);
+            System.out.println("Before Exception Common Type: "+commonType);
+        }
+	if (commonType == 3) {
+            commonType = checkType3Exception(productions) ? 2 : commonType;
+
+            if (DEBUG) {
+                if (checkType3Exception(productions)) {
+                    System.out.println("Failed Type 3 Exception");
+                }
+            }
         }
         if (commonType >= 1) {
             commonType = checkType1Exception(productions) ? 0 : commonType;
-        }
-        if (commonType == 3) {
-            commonType = checkType3Exception(productions) ? 2 : commonType;
+
+            if (DEBUG) {
+                if (checkType1Exception(productions)) {
+                    System.out.println("Failed Type 1 Exception");
+                }
+            }
         }
         if (commonType != -1) {
             System.out.println("Above laguage is Type-"+commonType+" Language");
@@ -145,7 +152,6 @@ public class App {
             for (char c : rhs.toCharArray()) {
                 if (c == 'S') {
                     isSinRhs = true;
-                    break;
                 }
             }
             if (lhs.equals("S") && rhs.equals("$")) {
@@ -178,7 +184,7 @@ public class App {
         st.nextToken();
         String rhs = st.nextToken();
         // Check if rhs is T*
-        if (isAllTerminals(rhs)) {
+        if (isAllTerminals(rhs) || (rhs.length() == 1 && Character.isUpperCase(rhs.charAt(0)))) {
             return 1;
         }
         // VT* type
