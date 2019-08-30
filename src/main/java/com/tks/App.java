@@ -35,35 +35,34 @@ public class App {
                 }
             }
         }
-        ArrayList<String> productions = new ArrayList<>();
+        ArrayList<Production> productions = new ArrayList<>();
         for (String p : rawProductions) {
             StringTokenizer st = new StringTokenizer(p);
-            String lsh = st.nextToken();
+            String lhs = st.nextToken();
             st.nextToken();
             String rhs = st.nextToken();
             st = new StringTokenizer(rhs, "/");
             while (st.hasMoreTokens()) {
-                productions.add(lsh + " " + st.nextToken());
+                Production pr = new Production(lhs, st.nextToken());
+                productions.add(pr);
             }
         }
         for (int i = 0; i < productions.size(); i++) {
-            String pVal = productions.get(i);
-            productions.set(i, pVal+" "+getType(pVal));
+            Production pVal = productions.get(i);
+            pVal.type = getType(pVal);
+            productions.set(i, pVal);
         }
 
         if (DEBUG) {
             System.out.println("Productions rules are: ");
-            for (String prod : productions) {
+            for (Production prod : productions) {
                 System.out.println(prod);
             }
         }
 
         int commonType = 5;
-        for (String prod : productions) {
-            StringTokenizer st = new StringTokenizer(prod);
-            st.nextToken();
-            st.nextToken();
-            String type = st.nextToken();
+        for (Production prod : productions) {
+            String type = prod.type;
             int t = -1;
             if (type.equals("invalid")) t = -1;
             else if (type.charAt(0) == 't') t = 3;
@@ -98,9 +97,8 @@ public class App {
         }
     }
 
-    public static boolean checkType0(String prod) {
-        StringTokenizer st = new StringTokenizer(prod);
-        String V = st.nextToken();
+    public static boolean checkType0(Production prod) {
+        String V = prod.alpha;
         for (char v : V.toCharArray()) {
             if (Character.isUpperCase(v)) {
                 return true;
@@ -109,26 +107,24 @@ public class App {
         return false;
     }
 
-    public static boolean checkType1(String prod) {
+    public static boolean checkType1(Production prod) {
         if (!checkType0(prod)) {
             return false;
         }
-        StringTokenizer st = new StringTokenizer(prod);
-        String alpha = st.nextToken();
-        String beta = st.nextToken();
+        String alpha = prod.alpha;
+        String beta = prod.beta;
         return alpha.length() <= beta.length();
     }
 
-    public static boolean checkType2(String prod) {
+    public static boolean checkType2(Production prod) {
         if (!checkType1(prod)) {
             return false;
         }
-        StringTokenizer st = new StringTokenizer(prod);
-        String alpha = st.nextToken();
+        String alpha = prod.alpha;
         return alpha.length() == 1;
     }
 
-    public static String getType(String prod) {
+    public static String getType(Production prod) {
         String type = "invalid";
         if (checkType3(prod) != 0) {
             type = "t"+checkType3(prod);
@@ -142,13 +138,12 @@ public class App {
         return type;
     }
 
-    public static boolean checkType1Exception(ArrayList<String> productions) {
+    public static boolean checkType1Exception(ArrayList<Production> productions) {
         boolean isSinRhs = false;
         boolean isS$ = false;
-        for (String prod : productions) {
-            StringTokenizer st = new StringTokenizer(prod);
-            String lhs = st.nextToken();
-            String rhs = st.nextToken();
+        for (Production prod : productions) {
+            String lhs = prod.alpha;
+            String rhs = prod.beta;
             for (char c : rhs.toCharArray()) {
                 if (c == 'S') {
                     isSinRhs = true;
@@ -161,14 +156,11 @@ public class App {
         return isS$ && isSinRhs;
     } 
 
-    public static boolean checkType3Exception(ArrayList<String> productions) {
+    public static boolean checkType3Exception(ArrayList<Production> productions) {
         boolean isT1 = false;
         boolean isT2 = false;
-        for (String prod : productions) {
-            StringTokenizer st = new StringTokenizer(prod);
-            st.nextToken();
-            st.nextToken();
-            String type = st.nextToken();
+        for (Production prod : productions) {
+            String type = prod.type;
             if (type.charAt(0) == 't') {
                 if (type.charAt(1) == '2') isT1 = true;
                 if (type.charAt(1) == '3') isT2 = true;
@@ -177,12 +169,10 @@ public class App {
         return isT1 && isT2;
     }
 
-    public static int checkType3(String prod) {
+    public static int checkType3(Production prod) {
         if (!checkType2(prod))
             return 0;
-        StringTokenizer st = new StringTokenizer(prod);
-        st.nextToken();
-        String rhs = st.nextToken();
+        String rhs = prod.beta;
         // Check if rhs is T*
         if (isAllTerminals(rhs) || (rhs.length() == 1 && Character.isUpperCase(rhs.charAt(0)))) {
             return 1;
@@ -195,7 +185,8 @@ public class App {
         }
         // T*V type
         lV = rhs.charAt(rhs.length()-1);
-        remaining = rhs.length() == 1 ? "" : rhs.substring(0, rhs.length()-2);
+        remaining = rhs.length() == 1 ? "" : rhs.substring(0, rhs.length()-1);
+        
         if (Character.isUpperCase(lV) && (remaining.length() == 0 || isAllTerminals(remaining))) {
             return 3;
         }
@@ -204,9 +195,42 @@ public class App {
 
     public static boolean isAllTerminals(String term) {
         for (char ch : term.toCharArray()){
-            if (!Character.isLowerCase(ch) && ch != '$') return false;
+            if (!Character.isLowerCase(ch) && ch != '$') {
+                return false;
+            }
         }
         return true;
     }
 
+}
+
+class Production {
+    String alpha;
+    String beta;
+    String type;
+    Production() {
+        this.alpha = "";
+        this.beta = "";
+        this.type = "";
+    }
+
+    Production(String alpha, String beta) {
+        this();
+        this.alpha = alpha;
+        this.beta = beta;
+    }
+
+    Production(String alpha, String beta, String type) {
+        this.alpha = alpha;
+        this.beta = beta;
+        this.type = type;
+    }
+
+    @Override
+    public String toString() {
+        String output = "";
+        output = this.alpha + " -> " + this.beta;
+        output = this.type.length() == 0 ? output : output + " Type: " + this.type;
+        return output;
+    }
 }
